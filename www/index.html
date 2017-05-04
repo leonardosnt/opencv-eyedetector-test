@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Hello</title>
+  </head>
+  <body>
+    <p>É recomendado imagens com cerca de 350x350. </p>
+    <p>O host da imagem deve estar com CORS ativado, caso contrário irá gerar um erro, é recomendável utilizar o Imgur.</p>
+    <input id="image-url-input"/>
+    <canvas id="canvas"></canvas>
+    <img id="image"></img>
+    <img id="glasses" src="http://i.imgur.com/1IoBfVd.png" style="display: none;"></img>
+    
+    <script>
+      function fetchImage (url) {
+        let img = document.getElementById('image');
+        img.src = url;
+        
+        fetch(url)
+          .then(res => res.arrayBuffer())
+          .then(buff => (
+            fetch('http://localhost:8080', { 
+              method: 'POST',
+              body: buff 
+            }).then(res => res.json())
+          ))
+          .then(result => {
+            const eyes = result.eyes;
+
+            if (eyes.length == 4) {
+              alert('Olhos não encontrados');
+              return;
+            }
+
+            const maxX = Math.max(eyes[0].x, eyes[1].x);
+            const minX = Math.min(eyes[0].x, eyes[1].x);
+            const middleX = (maxX + minX) / 2;
+
+            const maxY = Math.max(eyes[0].y, eyes[1].y);
+            const minY = Math.min(eyes[0].y, eyes[1].y);
+            const middleY = (maxY + minY) / 2;
+            
+            drawGlasses(middleX, middleY);
+            
+            console.log("Eyes:")
+            console.log(JSON.stringify(eyes, undefined, 2));
+          });
+      }
+      
+      function drawGlasses (x, y) {
+        const img = document.getElementById('image');
+        const canvas = document.getElementById("canvas");
+        
+        canvas.style.position = 'absolute';
+        canvas.style.left = img.offsetLeft + 'px';
+        canvas.style.top = img.offsetTop + 'px';
+        canvas.width = image.width;
+        canvas.height = image.height;
+        
+        const ctx = canvas.getContext('2d');
+        const glasses = document.getElementById('glasses');
+        ctx.drawImage(glasses, x - ((glasses.width / 2) - 80), y);
+      }
+      
+      function onLoad () {
+        const imgInput = document.getElementById('image-url-input');
+        
+        imgInput.addEventListener('keydown', (e) => {
+          if (e.keyCode == 13) {// Enter
+            fetchImage(e.target.value);
+          }
+        });
+      }
+      
+      window.onload = onLoad;
+    </script>
+  </body>
+</html>
